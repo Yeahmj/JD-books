@@ -2,12 +2,29 @@
 import scrapy
 import json
 from JD.items import JdItem
+# ----1.导入类
+from scrapy_redis.spiders import RedisSpider
 
 
-class BookSpider(scrapy.Spider):
+
+# class BookSpider(scrapy.Spider):
+# ----2.修改类的继承
+class BookSpider(RedisSpider):
     name = 'book'
-    allowed_domains = ['jd.com', '3.cn']
-    start_urls = ['https://book.jd.com/booksort.html']
+    # ----3.注销起始的url和允许的域名
+    # allowed_domains = ['jd.com', '3.cn']
+    # start_urls = ['https://book.jd.com/booksort.html']
+
+    # ----4 设置redis_key获取起始的url
+    redis_key = 'book'
+
+    # ----5 设置动态获取允许的域
+    def __init__(self, *args, **kwargs):
+        # Dynamically define the allowed domains list.
+        domain = kwargs.pop('domain', '')
+        self.allowed_domains = list(filter(None, domain.split(',')))
+        # print('------', self.allowed_domains)
+        super(BookSpider,self).__init__(*args, **kwargs)
 
     def parse(self, response):
         # 获取所有大分类节点列表
@@ -58,8 +75,14 @@ class BookSpider(scrapy.Spider):
             item['small_category_link'] = temp['small_category_link']
 
             item['name'] = book.xpath('./div[3]/a/em/text()').extract_first()
-            item['cover_link'] = 'https:' + book.xpath('./div[1]/a/img/@src').extract_first()
-            item['detail_url'] =  'https:'+ book.xpath('./div[1]/a/@href').extract_first()
+            try:
+                item['cover_link'] = 'https:' + book.xpath('./div[1]/a/img/@src').extract_first()
+            except:
+                item['cover_link'] = None
+            try:
+                item['detail_url'] =  'https:'+ book.xpath('./div[1]/a/@href').extract_first()
+            except:
+                item['detail_url'] = None
             item['author'] = book.xpath('./div[4]/span[1]/span/a/text()').extract_first()
             item['publisher'] = book.xpath('/div[4]/span[2]/a/text()').extract_first()
             item['pub_date'] = book.xpath('./div[4]/span[3]/text()').extract_first()
