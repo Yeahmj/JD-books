@@ -38,7 +38,7 @@ class BookSpider(RedisSpider):
 
             # 获取同胞节点的xpath
             node_list = big_node.xpath('../following-sibling::dd/em/a')
-            for node in node_list[:1]:
+            for node in node_list[0:1]:
                 temp = {}
                 temp['big_category'] = big_category
                 temp['big_category_link'] = big_category_link
